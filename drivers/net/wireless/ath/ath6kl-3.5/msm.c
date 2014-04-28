@@ -710,7 +710,6 @@ void ath6kl_hsic_enum_war_schedule(void)
 
 static void ath6kl_enum_war_work(struct work_struct *work)
 {
-	int ret;
 	int is_bt_gpio_on;
 
 	/* If driver is unloaded, skip the WAR */
@@ -721,28 +720,7 @@ static void ath6kl_enum_war_work(struct work_struct *work)
 
 	ath6kl_info("%s, BT_RESET:%d\n", __func__, is_bt_gpio_on);
 
-	if (is_bt_gpio_on == 1) {
-		ath6kl_trigger_bt_restart();
-	} else {
-		atomic_set(&ath6kl_recover_state,
-			ATH6KL_RECOVER_STATE_IN_PROGRESS);
-
-		ret = ath6kl_platform_power(gpdata, 0);
-
-		if (ret == 0 && ath6kl_bt_on == 0)
-			ath6kl_hsic_bind(0, true);
-
-		msleep(200);
-
-		ret = ath6kl_platform_power(gpdata, 1);
-
-		if (ret == 0 && ath6kl_bt_on == 0)
-			ath6kl_hsic_bind(1, true);
-
-		/* change the state and wakeup event queue */
-		atomic_set(&ath6kl_recover_state, ATH6KL_RECOVER_STATE_DONE);
-		wake_up(&ath6kl_hsic_recover_wq);
-	}
+	ath6kl_trigger_bt_restart();
 }
 
 static int ath6kl_hsic_probe(struct platform_device *pdev)

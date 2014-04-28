@@ -3210,8 +3210,13 @@ static int ath6kl_usb_init(void)
 			msecs_to_jiffies(probe_timeout)) != 0) {
 			ath6kl_info("can't wait for usb probe done\n");
 
+			usb_unregister_notify(&ath6kl_usb_dev_nb);
+			ath6kl_hsic_exit_msm();
+			usb_deregister(&ath6kl_usb_driver);
+
 			ath6kl_hsic_enum_war_schedule();
 			msleep(1000);
+			return -EIO;
 		}
 	}
 #endif

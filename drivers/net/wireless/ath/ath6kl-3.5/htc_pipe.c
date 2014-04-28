@@ -1809,7 +1809,7 @@ static int htc_wait_recv_ctrl_message(struct htc_target *target)
 
 		count--;
 
-		set_current_state(TASK_INTERRUPTIBLE);
+		set_current_state(TASK_UNINTERRUPTIBLE);
 		ret = schedule_timeout(msecs_to_jiffies(
 			HTC_TARGET_RESPONSE_POLL_MS));
 		set_current_state(TASK_RUNNING);

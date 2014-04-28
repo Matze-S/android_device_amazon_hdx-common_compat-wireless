@@ -809,7 +809,7 @@ static int ath6kl_target_config_wlan_params(struct ath6kl *ar, int idx)
 		}
 	} else {
 		if ((ath6kl_wmi_pmparams_cmd(
-			ar->wmi, idx, 0, 3, 3, 1, 1, 0)) != 0) {
+			ar->wmi, idx, 0, 3, 3, 1, 0, 0)) != 0) {
 			ath6kl_err("unable to set power save params\n");
 			status = -EIO;
 		}
@@ -2782,7 +2782,7 @@ static int __ath6kl_init_hw_start(struct ath6kl *ar)
 
 	if (!test_bit(TESTMODE_EPPING, &ar->flag)) {
 		/* Wait for Wmi event to be ready */
-		timeleft = wait_event_interruptible_timeout(ar->event_wq,
+		timeleft = wait_event_timeout(ar->event_wq,
 							    test_bit(WMI_READY,
 							    &ar->flag),
 							    WMI_TIMEOUT);

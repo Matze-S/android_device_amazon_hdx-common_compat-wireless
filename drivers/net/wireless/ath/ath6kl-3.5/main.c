@@ -2754,6 +2754,23 @@ static int ath6kl_ioctl_set_suspend(struct ath6kl_vif *vif,
 						host_req_delay))
 			ret = -EIO;
 
+		if (ret == 0) {
+			/* When screen is off, set PM parametrs to the
+			   origianl ones */
+			if ((user_cmd[0] - '0')) {
+				if (ath6kl_wmi_pmparams_cmd(vif->ar->wmi,
+					vif->fw_vif_idx,
+					0, 3, 3, 1, 1, 0))
+				ret = -EIO;
+			}
+			else {
+				if (ath6kl_wmi_pmparams_cmd(vif->ar->wmi,
+					vif->fw_vif_idx,
+					0, 3, 3, 1, 0, 0))
+				ret = -EIO;
+			}
+		}
+
 		up(&vif->ar->sem);
 	} else
 		ret = -EFAULT;
