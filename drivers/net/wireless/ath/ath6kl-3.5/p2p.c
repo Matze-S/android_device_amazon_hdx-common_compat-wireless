@@ -569,7 +569,9 @@ int ath6kl_p2p_utils_init_port(struct ath6kl_vif *vif,
 						!test_bit(PORT_STATUS_PEND,
 						&vif->flags),
 						WMI_TIMEOUT/2);
-				WARN_ON(left <= 0);
+				if (left <= 0)
+					ath6kl_dbg(ATH6KL_DBG_EXT_INFO1,
+						"wait time left %ld", left);
 			}
 
 			/* Only support exectly id-to-id mapping. */
@@ -585,7 +587,9 @@ int ath6kl_p2p_utils_init_port(struct ath6kl_vif *vif,
 						!test_bit(PORT_STATUS_PEND,
 						&vif->flags),
 						WMI_TIMEOUT);
-			WARN_ON(left <= 0);
+			if (left <= 0)
+				ath6kl_dbg(ATH6KL_DBG_EXT_INFO1,
+					"wait time left %ld", left);
 
 			if (type == NL80211_IFTYPE_P2P_CLIENT) {
 				/*

@@ -31,7 +31,6 @@
 #include <linux/device.h>
 #include <linux/platform_device.h>
 #include <linux/wlan_plat.h>
-#include <mach/msm_bus.h>
 #include <linux/gpio.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
@@ -219,9 +218,6 @@ void __exit ath6kl_sdio_exit_msm(void)
 #else
 
 #ifdef ATH6KL_BUS_VOTE
-static u32 bus_perf_client;
-static struct msm_bus_scale_pdata *ath6kl_bus_scale_pdata;
-
 u8 *platform_has_vreg;
 #endif
 
@@ -734,12 +730,6 @@ static int ath6kl_hsic_probe(struct platform_device *pdev)
 		previous = 0;
 		ath6kl_toggle_radio(pdev->dev.platform_data, 1);
 	} else {
-		ath6kl_bus_scale_pdata = msm_bus_cl_get_pdata(pdev);
-		bus_perf_client =
-			msm_bus_scale_register_client(
-				ath6kl_bus_scale_pdata);
-		msm_bus_scale_client_update_request(bus_perf_client, 4);
-
 		pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
 
 		if (!pdata) {
@@ -811,9 +801,6 @@ static int ath6kl_hsic_remove(struct platform_device *pdev)
 	if (machine_is_apq8064_dma()) {
 		ath6kl_toggle_radio(pdev->dev.platform_data, 0);
 	} else {
-		msm_bus_scale_client_update_request(bus_perf_client, 1);
-		if (bus_perf_client)
-			msm_bus_scale_unregister_client(bus_perf_client);
 
 		if (pdata->wifi_chip_pwd != NULL)  {
 			int ret;

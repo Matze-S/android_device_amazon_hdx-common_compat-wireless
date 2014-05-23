@@ -2807,7 +2807,7 @@ static int __ath6kl_init_hw_start(struct ath6kl *ar)
 			goto err_htc_stop;
 		}
 
-		if (!timeleft || signal_pending(current)) {
+		if (!timeleft) {
 			ath6kl_err("wmi is not ready or wait "
 				   "was interrupted\n");
 			ret = -EIO;
