@@ -3875,7 +3875,8 @@ static void alx_tx_map(struct alx_adapter *adpt,
 	 * The last buffer info contain the skb address,
 	 * so it will be free after unmap
 	 */
-	tpbuf->skb = skb;
+	if (tpbuf)
+		tpbuf->skb = skb;
 }
 
 
