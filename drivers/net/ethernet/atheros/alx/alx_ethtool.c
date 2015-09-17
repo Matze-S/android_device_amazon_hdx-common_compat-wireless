@@ -620,5 +620,9 @@ static const struct ethtool_ops alx_ethtool_ops = {
 
 void alx_set_ethtool_ops(struct net_device *netdev)
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+	netdev_set_default_ethtool_ops(netdev, &alx_ethtool_ops);
+#else
 	SET_ETHTOOL_OPS(netdev, &alx_ethtool_ops);
+#endif
 }

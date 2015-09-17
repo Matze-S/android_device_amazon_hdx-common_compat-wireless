@@ -42,7 +42,11 @@
 #include <asm/byteorder.h>
 #ifdef MDM_PLATFORM
 #include <linux/ipa.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+#include <linux/msm_pcie.h>
+#else
 #include <mach/msm_pcie.h>
+#endif
 #endif
 
 #include "alx_sw.h"
