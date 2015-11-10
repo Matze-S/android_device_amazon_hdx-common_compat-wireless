@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * Copyright (c) 2015 Qualcomm Atheros, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -763,6 +763,7 @@ struct alx_ipa_ctx {
 	uint64_t alx_tx_completion;
 	bool acquire_wake_src;
 	struct wakeup_source rm_ipa_wait;
+	bool ipa_ready;
 };
 
 struct alx_ipa_rx_desc_node {
