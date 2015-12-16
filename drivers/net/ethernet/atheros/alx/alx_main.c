@@ -1,6 +1,6 @@
-/* Copyright (c) 2014, The Linux Foundation. All rights reserved. */
+/* Copyright (c) 2015, The Linux Foundation. All rights reserved. */
 /*
- * Copyright (c) 2012 Qualcomm Atheros, Inc.
+ * Copyright (c) 2015 Qualcomm Atheros, Inc.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -70,6 +70,7 @@ static int alx_open_internal(struct alx_adapter *adpt, u32 ctrl);
 static void alx_stop_internal(struct alx_adapter *adpt, u32 ctrl);
 static void alx_init_ring_ptrs(struct alx_adapter *adpt);
 static int alx_ipa_rm_try_release(struct alx_adapter *adpt);
+static int alx_ipa_setup_rm(struct alx_adapter *adpt);
 
 #ifdef MDM_PLATFORM
 /* Global CTX PTR which can be used for debugging */
@@ -3608,7 +3609,7 @@ static void alx_link_task_routine(struct alx_adapter *adpt)
 
 #ifdef MDM_PLATFORM
 		/* Enable ODU Bridge */
-		if (CHK_ADPT_FLAG(2, ODU_INIT)) {
+		if (alx_ipa->ipa_ready == true && CHK_ADPT_FLAG(2, ODU_INIT)) {
 			ret = odu_bridge_connect();
 			if (ret)
 				pr_err("Could not connect to ODU bridge %d \n",
@@ -4204,7 +4205,6 @@ static const struct net_device_ops alx_netdev_ops = {
 };
 
 #ifdef MDM_PLATFORM
-
 static void alx_ipa_tx_dp_cb(void *priv, enum ipa_dp_evt_type evt,
                 unsigned long data)
 {
@@ -4282,6 +4282,67 @@ static void alx_ipa_tx_dl(void *priv, struct sk_buff *skb)
 	} else {
 		/* Deliver SKB to HW */
 		alx_ipa->stats.tx_ipa_send++;
+	}
+}
+
+static void alx_ipa_ready_cb(struct alx_adapter *adpt)
+{
+	struct alx_ipa_ctx *alx_ipa = adpt->palx_ipa;
+        struct odu_bridge_params *params_ptr, params;
+	int retval = 0;
+	struct alx_hw *hw = &adpt->hw;
+        params_ptr = &params;
+
+	pr_info("%s:%d --- IPA is ready --- \n",__func__,__LINE__);
+        alx_ipa->ipa_ready = true;
+
+	/* Init IPA Resources */
+	if (alx_ipa_setup_rm(adpt)) {
+		pr_err("ALX: IPA Setup RM Failed \n");
+		return;
+	} else {
+		SET_ADPT_FLAG(2, IPA_RM);
+	}
+
+	/* Initialize the ODU bridge driver now: odu_bridge_init()*/
+	params_ptr->netdev_name = adpt->netdev->name;
+	params_ptr->priv = adpt;
+	params.tx_dp_notify = alx_ipa_tx_dp_cb;
+	params_ptr->send_dl_skb = (void *)&alx_ipa_tx_dl;
+	memcpy(params_ptr->device_ethaddr, adpt->netdev->dev_addr, ETH_ALEN);
+        /* The maximum number of descriptors that can be provided to a BAM at
+	* once is one less than the total number of descriptors that the buffer
+	* can contain. */
+	params_ptr->ipa_desc_size = (adpt->ipa_high_watermark + 1) *
+					sizeof(struct sps_iovec);
+	retval = odu_bridge_init(params_ptr);
+	if (retval) {
+		pr_err("Couldnt initialize ODU_Bridge Driver \n");
+		return;
+	} else {
+		SET_ADPT_FLAG(2, ODU_INIT);
+	}
+
+	/* Check for link phy state */
+	if (hw->link_up) {
+		/* Enable ODU Bridge */
+		if (CHK_ADPT_FLAG(2, ODU_INIT)) {
+			retval = odu_bridge_connect();
+			if (retval) {
+				pr_err("Could not connect to ODU bridge %d \n",
+					retval);
+				return;
+			} else {
+				SET_ADPT_FLAG(2, ODU_CONNECT);
+			}
+			spin_lock_bh(&alx_ipa->ipa_rm_state_lock);
+			if (alx_ipa->ipa_prod_rm_state == ALX_IPA_RM_RELEASED) {
+				spin_unlock_bh(&alx_ipa->ipa_rm_state_lock);
+				alx_ipa_rm_request(adpt);
+			} else {
+				spin_unlock_bh(&alx_ipa->ipa_rm_state_lock);
+			}
+		}
 	}
 }
 
@@ -4841,6 +4902,7 @@ static int __devinit alx_init(struct pci_dev *pdev,
 	adpt->ipa_free_desc_cnt = ALX_IPA_SYS_PIPE_MAX_PKTS_DESC;
 	adpt->ipa_high_watermark = ALX_IPA_SYS_PIPE_MAX_PKTS_DESC;
 	adpt->ipa_low_watermark = ALX_IPA_SYS_PIPE_MIN_PKTS_DESC;
+	alx_ipa->ipa_ready = false;
 	spin_lock_init(&adpt->flow_ctrl_lock);
 	INIT_LIST_HEAD(&adpt->pend_queue_head);
 	INIT_LIST_HEAD(&adpt->free_queue_head);
@@ -4854,11 +4916,27 @@ static int __devinit alx_init(struct pci_dev *pdev,
 	adpt->msg_enable = ALX_MSG_DEFAULT;
 
 #ifdef MDM_PLATFORM
-        if (alx_ipa_setup_rm(adpt)) {
-		pr_err("ALX: IPA Setup RM Failed \n");
-		goto err_ipa_rm;
-	} else {
-		SET_ADPT_FLAG(2, IPA_RM);
+	retval = ipa_register_ipa_ready_cb(alx_ipa_ready_cb, (void *)adpt);
+	if (retval < 0) {
+		if (retval == -EEXIST) {
+			pr_info("%s:%d -- IPA is Ready retval %d \n",
+					__func__,__LINE__,retval);
+			alx_ipa->ipa_ready = true;
+		} else {
+			pr_info("%s:%d -- IPA is Not Ready retval %d \n",
+					__func__,__LINE__,retval);
+			alx_ipa->ipa_ready = false;
+		}
+	}
+
+	if (alx_ipa->ipa_ready == true)
+	{
+		if (alx_ipa_setup_rm(adpt)) {
+			pr_err("ALX: IPA Setup RM Failed \n");
+			goto err_ipa_rm;
+		} else {
+			SET_ADPT_FLAG(2, IPA_RM);
+		}
 	}
         if (alx_debugfs_init(adpt)) {
 		pr_err("ALX: Debugfs Init failed \n");
@@ -4886,9 +4964,6 @@ static int __devinit alx_init(struct pci_dev *pdev,
 	alx_set_ethtool_ops(netdev);
 	netdev->watchdog_timeo = ALX_WATCHDOG_TIME;
 	strlcpy(netdev->name, pci_name(pdev), sizeof(netdev->name) - 1);
-
-
-
 
 	/* init alx_adapte structure */
 	retval = alx_init_adapter(adpt);
@@ -5099,22 +5174,24 @@ static int __devinit alx_init(struct pci_dev *pdev,
 
 #ifdef MDM_PLATFORM
 	/* Initialize the ODU bridge driver now: odu_bridge_init()*/
-        params_ptr->netdev_name = netdev->name;
-	params_ptr->priv = adpt;
-	params.tx_dp_notify = alx_ipa_tx_dp_cb;
-	params_ptr->send_dl_skb = (void *)&alx_ipa_tx_dl;
-	memcpy(params_ptr->device_ethaddr, netdev->dev_addr, ETH_ALEN);
-        /* The maximum number of descriptors that can be provided to a BAM at
-	 * once is one less than the total number of descriptors that the buffer
-         * can contain. */
-	params_ptr->ipa_desc_size = (adpt->ipa_high_watermark + 1) *
+	if (alx_ipa->ipa_ready == true) {
+		params_ptr->netdev_name = netdev->name;
+		params_ptr->priv = adpt;
+		params.tx_dp_notify = alx_ipa_tx_dp_cb;
+		params_ptr->send_dl_skb = (void *)&alx_ipa_tx_dl;
+		memcpy(params_ptr->device_ethaddr, netdev->dev_addr, ETH_ALEN);
+		/* The maximum number of descriptors that can be provided to a
+		 * BAM at once is one less than the total number of descriptors
+		 * that the buffer can contain. */
+		params_ptr->ipa_desc_size = (adpt->ipa_high_watermark + 1) *
 					sizeof(struct sps_iovec);
-	retval = odu_bridge_init(params_ptr);
-	if (retval) {
-		pr_err("Couldnt initialize ODU_Bridge Driver \n");
-		goto err_init_odu_bridge;
-	} else {
-		SET_ADPT_FLAG(2, ODU_INIT);
+		retval = odu_bridge_init(params_ptr);
+		if (retval) {
+			pr_err("Couldnt initialize ODU_Bridge Driver \n");
+			goto err_init_odu_bridge;
+		} else {
+			SET_ADPT_FLAG(2, ODU_INIT);
+		}
 	}
 
 	/* Initialize IPA Flow Control Work Task */
@@ -5132,7 +5209,6 @@ static int __devinit alx_init(struct pci_dev *pdev,
 				__func__, retval);
 		goto msm_pcie_register_fail;
 	}
-
 #endif
 
 	/* carrier off reporting is important to ethtool even BEFORE open */
