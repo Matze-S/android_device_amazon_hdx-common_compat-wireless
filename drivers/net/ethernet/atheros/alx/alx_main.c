@@ -3322,7 +3322,7 @@ static int alx_shutdown_internal(struct pci_dev *pdev, bool *wakeup)
 		return retval;
 
 	*wakeup = wufc ? true : false;
-	pci_disable_device(pdev);
+	pci_clear_master(pdev);
 	return 0;
 }
 
