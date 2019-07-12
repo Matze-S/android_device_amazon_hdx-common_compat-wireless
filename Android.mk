@@ -84,6 +84,29 @@ LOCAL_MODULE_TAGS        := optional debug
 LOCAL_MODULE_KBUILD_NAME := wlan.ko
 LOCAL_MODULE_PATH        := $(TARGET_OUT)/lib/modules/ath6kl-3.5
 include $(DLKM_DIR)/AndroidKernelModule.mk
+
+# WLAN SYMLINKS
+
+include $(CLEAR_VARS)
+
+WCNSS_QCOM_CFG_LINK := $(TARGET_OUT)/etc/firmware/wlan/prima/WCNSS_qcom_cfg.ini
+$(WCNSS_QCOM_CFG_LINK): WCNSS_QCOM_CFG_FILE := /data/misc/wifi/WCNSS_qcom_cfg.ini
+$(WCNSS_QCOM_CFG_LINK): $(LOCAL_INSTALLED_MODULE) $(LOCAL_PATH)/Android.mk
+	$(hide) echo "Symlink: $(WCNSS_QCOM_CFG_LINK) -> $(WCNSS_QCOM_CFG_FILE)"
+	$(hide) mkdir -p $(dir $@)
+	$(hide) rm -rf $@
+	$(hide) ln -sf $(WCNSS_QCOM_CFG_FILE) $@
+
+WCNSS_QCOM_WLAN_NV_LINK := $(TARGET_OUT)/etc/firmware/wlan/prima/WCNSS_qcom_wlan_nv.bin
+$(WCNSS_QCOM_WLAN_NV_LINK): WCNSS_QCOM_WLAN_NV_FILE := /persist/WCNSS_qcom_wlan_nv.bin
+$(WCNSS_QCOM_WLAN_NV_LINK): $(LOCAL_INSTALLED_MODULE) $(LOCAL_PATH)/Android.mk
+	$(hide) echo "Symlink: $(WCNSS_QCOM_WLAN_NV_LINK) -> $(WCNSS_QCOM_WLAN_NV_FILE)"
+	$(hide) mkdir -p $(dir $@)
+	$(hide) rm -rf $@
+	$(hide) ln -sf $(WCNSS_QCOM_WLAN_NV_FILE) $@
+
+ALL_DEFAULT_INSTALLED_MODULES += $(WCNSS_QCOM_CFG_LINK) $(WCNSS_QCOM_WLAN_NV_LINK)
+
 else
 include $(CLEAR_VARS)
 include $(LOCAL_PATH)/drivers/net/wireless/ath/ath6kl-3.5/android_sdio/Android.mk
