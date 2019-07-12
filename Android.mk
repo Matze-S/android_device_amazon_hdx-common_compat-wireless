@@ -85,13 +85,16 @@ include $(DLKM_DIR)/AndroidKernelModule.mk
 endif
 endif
 
+ifeq ($(BOARD_CONFIG_ATH6KL_USB), true)
 include $(CLEAR_VARS)
 LOCAL_MODULE             := ath6kl_usb.ko
 LOCAL_MODULE_TAGS        := optional debug
 LOCAL_MODULE_KBUILD_NAME := wlan.ko
 LOCAL_MODULE_PATH        := $(TARGET_OUT)/lib/modules/ath6kl-3.5
 include $(DLKM_DIR)/AndroidKernelModule.mk
-
+else
+include $(CLEAR_VARS)
 include $(LOCAL_PATH)/drivers/net/wireless/ath/ath6kl-3.5/android_sdio/Android.mk
+endif
 
 endif
