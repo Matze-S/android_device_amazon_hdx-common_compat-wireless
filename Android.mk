@@ -87,10 +87,10 @@ endif
 
 ifeq ($(BOARD_CONFIG_ATH6KL_USB), true)
 include $(CLEAR_VARS)
-LOCAL_MODULE             := ath6kl_usb.ko
+LOCAL_MODULE             := wlan.ko
 LOCAL_MODULE_TAGS        := optional debug
 LOCAL_MODULE_KBUILD_NAME := wlan.ko
-LOCAL_MODULE_PATH        := $(TARGET_OUT)/lib/modules/ath6kl-3.5
+LOCAL_MODULE_PATH        := $(TARGET_OUT)/lib/modules
 include $(DLKM_DIR)/AndroidKernelModule.mk
 
 # WLAN SYMLINKS
