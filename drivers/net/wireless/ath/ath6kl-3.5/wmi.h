@@ -780,6 +780,7 @@ enum wmi_cmd_id {
 /* merge from olca mainline for align command id - end
  * private commands shall grow back from 0xFFFE
  */
+	WMI_SET_RXFILTER_CMDID = 0xFFFB,
 	WMI_SET_GO_SYNC_CMDID = 0xFFFC,
 	WMI_SET_DTIM_EXT_CMDID = 0xFFFD,
 	WMI_SET_CREDIT_BYPASS_CMDID = 0xFFFE,
@@ -1407,6 +1408,11 @@ struct wmi_set_lpreamble_cmd {
 
 struct wmi_set_rts_cmd {
 	__le16 threshold;
+} __packed;
+
+struct wmi_set_rxfilter_cmd {
+	u8 rxfilter_cmd;
+	u8 rxfilter_type;
 } __packed;
 
 /* WMI_SET_TX_PWR_CMDID */
@@ -3362,6 +3368,7 @@ int ath6kl_wmi_delete_pstream_cmd(struct wmi *wmi, u8 if_idx, u8 traffic_class,
 int ath6kl_wmi_disctimeout_cmd(struct wmi *wmi, u8 if_idx, u8 timeout);
 
 int ath6kl_wmi_set_rts_cmd(struct wmi *wmi, u8 if_idx, u16 threshold);
+int ath6kl_wmi_set_rxfilter_cmd(struct wmi *wmi, u8 if_idx, u8 rf_cmd, u8 rf_type);
 int ath6kl_wmi_set_lpreamble_cmd(struct wmi *wmi, u8 if_idx, u8 status,
 				 u8 preamble_policy);
 

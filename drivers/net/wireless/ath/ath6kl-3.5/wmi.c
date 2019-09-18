@@ -3622,6 +3622,25 @@ int ath6kl_wmi_set_rts_cmd(struct wmi *wmi, u8 if_idx, u16 threshold)
 	return ret;
 }
 
+int ath6kl_wmi_set_rxfilter_cmd(struct wmi *wmi, u8 if_idx, u8 rxfilter_cmd, u8 rxfilter_type)
+{
+	struct sk_buff *skb;
+	struct wmi_set_rxfilter_cmd *cmd;
+	int ret;
+
+	skb = ath6kl_wmi_get_new_buf(sizeof(struct wmi_set_rxfilter_cmd));
+	if (!skb)
+		return -ENOMEM;
+
+	cmd = (struct wmi_set_rxfilter_cmd *) skb->data;
+	cmd->rxfilter_cmd = rxfilter_cmd;
+	cmd->rxfilter_type = rxfilter_type;
+
+	ret = ath6kl_wmi_cmd_send(wmi, if_idx, skb, WMI_SET_RXFILTER_CMDID,
+				  NO_SYNC_WMIFLAG);
+	return ret;
+}
+
 int ath6kl_wmi_set_wmm_txop(struct wmi *wmi, u8 if_idx, enum wmi_txop_cfg cfg)
 {
 	struct sk_buff *skb;
