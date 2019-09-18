@@ -2567,6 +2567,26 @@ done:
 	return ret;
 }
 
+static int ath6kl_ioctl_rxfilter(struct ath6kl_vif *vif,
+				char *user_cmd,
+				enum rxfilter_cmd rxfilter_cmd,
+				int len)
+{
+	int ret = 0, rxfilter_type = 0;
+
+	if (rxfilter_cmd > RXFILTER_START && len > 1) {
+		sscanf(user_cmd, "%d", &rxfilter_type);
+		if (rxfilter_type < 0 || rxfilter_type > 3)
+			return -EINVAL;
+	}
+	ath6kl_wmi_set_rxfilter_cmd(vif->ar->wmi,
+			vif->fw_vif_idx,
+			rxfilter_cmd, rxfilter_type);
+	printk("ath6kl_ioctl_rxfilter: %s\n", user_cmd);
+
+	return ret;
+}
+
 static int ath6kl_ioctl_ap_acl(struct ath6kl_vif *vif,
 				char *user_cmd,
 				u8 *buf,	/* reserved for GET op */
@@ -2705,6 +2725,26 @@ static int ath6kl_ioctl_standard(struct net_device *dev,
 							user_cmd,
 							android_cmd.buf,
 							android_cmd.used_len);
+				else if (strstr(user_cmd, "RXFILTER-STOP"))
+					ret = ath6kl_ioctl_rxfilter(vif,
+							(user_cmd),
+							RXFILTER_STOP,
+							0);
+				else if (strstr(user_cmd, "RXFILTER-START"))
+					ret = ath6kl_ioctl_rxfilter(vif,
+							(user_cmd),
+							RXFILTER_START,
+							0);
+				else if (strstr(user_cmd, "RXFILTER-ADD "))
+					ret = ath6kl_ioctl_rxfilter(vif,
+							(user_cmd + 13),
+							RXFILTER_ADD,
+							(android_cmd.used_len - 13));
+				else if (strstr(user_cmd, "RXFILTER-REMOVE "))
+					ret = ath6kl_ioctl_rxfilter(vif,
+							(user_cmd + 16),
+							RXFILTER_REMOVE,
+							(android_cmd.used_len - 16));
 				else if (strstr(user_cmd, "ACL "))
 					ret = ath6kl_ioctl_ap_acl(vif,
 						(user_cmd + 4),

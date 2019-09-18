@@ -1266,6 +1266,13 @@ enum scan_plan_type {
 	ATH6KL_SCAN_PLAN_HOST_ORDER,
 };
 
+enum rxfilter_cmd {
+	RXFILTER_STOP = 0,
+	RXFILTER_START = 1,
+	RXFILTER_ADD = 2,
+	RXFILTER_REMOVE = 3,
+};
+
 struct ath6kl_scan_plan {
 	enum scan_plan_type type;
 	u8 numChan;
