@@ -1779,6 +1779,7 @@ static int ath6kl_cfg80211_disconnect(struct wiphy *wiphy,
 	struct ath6kl *ar = (struct ath6kl *)ath6kl_priv(dev);
 	struct ath6kl_vif *vif = netdev_priv(dev);
 	int ret;
+	long timeleft;
 
 	ath6kl_dbg(ATH6KL_DBG_WLAN_CFG |
 		ATH6KL_DBG_EXT_INFO1 |
@@ -1832,14 +1833,14 @@ static int ath6kl_cfg80211_disconnect(struct wiphy *wiphy,
 			return 0;
 		}
 		set_bit(DISCONNECT_PEND, &vif->flags);
-		wait_event_interruptible_timeout(ar->event_wq,
+		timeleft = wait_event_timeout(ar->event_wq,
 						 !test_bit(DISCONNECT_PEND,
 						 &vif->flags),
 						 (HZ/2));
 
-		if (signal_pending(current)) {
+		if (!timeleft) {
 			ath6kl_err("wait DISCONNECT timeout!\n");
-			return -EINTR;
+			return -ETIMEDOUT;
 		}
 	}
 
