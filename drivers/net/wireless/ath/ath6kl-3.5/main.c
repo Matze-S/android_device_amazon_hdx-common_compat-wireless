@@ -2911,6 +2911,15 @@ static int ath6kl_ioctl_standard(struct net_device *dev,
 					ret = ath6kl_ioctl_set_suspend(vif,
 						(user_cmd + 15),
 						(android_cmd.used_len - 15));
+// ACOS_MOD_START {dtim_skip}
+				else if (strstr(user_cmd, "SETDTIMSKIP ")) {
+					ret = 0;
+					if( vif->ar->dtim_ext != user_cmd[12] - '0' ) {
+						vif->ar->dtim_ext = user_cmd[12] - '0';
+						ret = ath6kl_wmi_set_dtim_ext(vif->ar->wmi, vif->ar->dtim_ext);
+					}
+				}
+// ACOS_MOD_END {dtim_skip}
 #ifdef CONFIG_ANDROID
 				else if (strstr(user_cmd, "SET_BT_ON ")) {
 					ath6kl_bt_on =
