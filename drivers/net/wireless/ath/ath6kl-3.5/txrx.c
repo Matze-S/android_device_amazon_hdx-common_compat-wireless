@@ -2113,6 +2113,17 @@ static inline struct ath6kl_sta *_powersave_ap_rx(struct ath6kl_vif *vif,
 	return conn;
 }
 
+#ifdef CONFIG_IP_WOW
+extern void tag_wow_skb(struct sk_buff *skb);
+#else
+void tag_wow_skb(struct sk_buff *skb)
+{
+	u32 *tag;
+	tag = (u32 *)skb->cb;
+	*tag = 2;
+}
+#endif
+
 void ath6kl_rx(struct htc_target *target, struct htc_packet *packet)
 {
 	struct ath6kl *ar = target->dev->ar;
@@ -2257,6 +2268,11 @@ void ath6kl_rx(struct htc_target *target, struct htc_packet *packet)
 		 */
 		dev_kfree_skb(skb);
 		return;
+	}
+
+	if (ar->tag_wow_packet == true) {
+		tag_wow_skb(skb);
+		ar->tag_wow_packet = false;
 	}
 
 	/* Get the Power save state of the STA */

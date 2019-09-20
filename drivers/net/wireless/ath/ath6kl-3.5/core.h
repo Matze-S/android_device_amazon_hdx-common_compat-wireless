@@ -1941,6 +1941,7 @@ struct ath6kl {
 
 	/* set if wow pattern set by debug_fs */
 	bool get_wow_pattern;
+	bool tag_wow_packet;
 
 	struct work_struct reset_cover_war_work;
 
