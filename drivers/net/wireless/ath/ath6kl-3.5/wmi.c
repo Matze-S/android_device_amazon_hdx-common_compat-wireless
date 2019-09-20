@@ -4385,7 +4385,7 @@ static int ath6kl_wmi_port_status_event_rx(struct ath6kl_vif *vif,
 
 
 static int ath6kl_wmi_wow_ext_wake_event(struct wmi *wmi, u8 *datap,
-					int len)
+					int len, struct ath6kl *ar)
 {
 	struct wmi_wow_event_wake_event *ev;
 
@@ -4399,6 +4399,8 @@ static int ath6kl_wmi_wow_ext_wake_event(struct wmi *wmi, u8 *datap,
 	ath6kl_dbg(ATH6KL_DBG_WOWLAN, "    type: %d\n", ev->type);
 	ath6kl_dbg(ATH6KL_DBG_WOWLAN, "   value: %d\n", ev->value);
 	ath6kl_dbg(ATH6KL_DBG_WOWLAN, " pkt_len: %d\n", ev->packet_length);
+
+	ar->tag_wow_packet = true;
 
 #ifdef ATH6KL_SUPPORT_WLAN_HB
 	if (ev->type == WOW_EXT_WAKE_TYPE_WLAN_HB) {
@@ -4853,7 +4855,7 @@ int ath6kl_wmi_control_rx(struct wmi *wmi, struct sk_buff *skb)
 #endif
 	case WMI_WOW_EXT_WAKE_EVENTID:
 		ath6kl_dbg(ATH6KL_DBG_WMI, "WMI_WOW_EXT_WAKE_EVENTID\n");
-		ret = ath6kl_wmi_wow_ext_wake_event(wmi, datap, len);
+		ret = ath6kl_wmi_wow_ext_wake_event(wmi, datap, len, ar);
 		break;
 #ifdef ATH6KL_SUPPORT_WIFI_DISC
 	case WMI_DISC_PEER_EVENTID:
