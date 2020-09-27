@@ -89,14 +89,6 @@ include $(DLKM_DIR)/AndroidKernelModule.mk
 
 include $(CLEAR_VARS)
 
-WCNSS_QCOM_CFG_LINK := $(TARGET_OUT_VENDOR)/firmware/wlan/prima/WCNSS_qcom_cfg.ini
-$(WCNSS_QCOM_CFG_LINK): WCNSS_QCOM_CFG_FILE := /data/misc/wifi/WCNSS_qcom_cfg.ini
-$(WCNSS_QCOM_CFG_LINK): $(LOCAL_INSTALLED_MODULE) $(LOCAL_PATH)/Android.mk
-	$(hide) echo "Symlink: $(WCNSS_QCOM_CFG_LINK) -> $(WCNSS_QCOM_CFG_FILE)"
-	$(hide) mkdir -p $(dir $@)
-	$(hide) rm -rf $@
-	$(hide) ln -sf $(WCNSS_QCOM_CFG_FILE) $@
-
 WCNSS_QCOM_WLAN_NV_LINK := $(TARGET_OUT_VENDOR)/firmware/wlan/prima/WCNSS_qcom_wlan_nv.bin
 $(WCNSS_QCOM_WLAN_NV_LINK): WCNSS_QCOM_WLAN_NV_FILE := /persist/WCNSS_qcom_wlan_nv.bin
 $(WCNSS_QCOM_WLAN_NV_LINK): $(LOCAL_INSTALLED_MODULE) $(LOCAL_PATH)/Android.mk
@@ -105,7 +97,7 @@ $(WCNSS_QCOM_WLAN_NV_LINK): $(LOCAL_INSTALLED_MODULE) $(LOCAL_PATH)/Android.mk
 	$(hide) rm -rf $@
 	$(hide) ln -sf $(WCNSS_QCOM_WLAN_NV_FILE) $@
 
-ALL_DEFAULT_INSTALLED_MODULES += $(WCNSS_QCOM_CFG_LINK) $(WCNSS_QCOM_WLAN_NV_LINK)
+ALL_DEFAULT_INSTALLED_MODULES += $(WCNSS_QCOM_WLAN_NV_LINK)
 
 else
 include $(CLEAR_VARS)
